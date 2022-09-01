@@ -1,0 +1,35 @@
+{
+  "name": "rollup-starter-app",
+  "dependencies": {
+    "@assemblyscript/loader": "^0.21.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.1.0",
+    "@rollup/plugin-typescript": "^8.4.0",
+    "assemblyscript": "^0.21.2",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^2.36.2",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "serve": "^11.3.2",
+    "tslib": "^2.4.0",
+    "typescript": "^4.8.2"
+  },
+  "scripts": {
+    "build:rollup": "rollup -c",
+    "watch:rollup": "rollup -c -w",
+    "dev": "npm-run-all --parallel start watch:rollup build:wasm",
+    "start": "serve output",
+    "build:wasm": "asc assembly/nBodyWasm.ts --target release --bindings esm --outFile output/nBodyWasm.wasm",
+    "build:wasm:debug": "asc assembly/nBodyWasm.ts --target debug --bindings raw --outFile output/nBodyWasm.wasm",
+    "test": "node tests"
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./build/release.js",
+      "types": "./build/release.d.ts"
+    }
+  }
+}
