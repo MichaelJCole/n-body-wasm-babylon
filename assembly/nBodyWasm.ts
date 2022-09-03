@@ -1,158 +1,197 @@
-/**
- * Because can only pass numbers to/from Wasm, our parameters are passed as an array of floats
- *
- * We let nBodySystem.js apply these forces to the bodies as acceleration.
- *
- * Doing this means the game loop calculate forces as needed and re-use forces if overloaded.
- *
- * TODO FIXME Possible performance boost using unchecked() https://github.com/AssemblyScript/assemblyscript/issues/838
- *
- * A newer WebAssembly n-body implementation in the AssemblyScript examples: https://github.com/AssemblyScript/examples/tree/main/n-body
- */
+// Original: https://github.com/AssemblyScript/examples/blob/main/n-body/assembly/index.ts
+// License:  https://github.com/AssemblyScript/examples/blob/main/LICENSE
+// From The Computer Language Benchmarks Game http://benchmarksgame.alioth.debian.org
 
-export const FLOAT64ARRAY_ID = idof<Float64Array>()
+type float = f64 // interchangeable f32/f64 for testing
 
-// Gravitational constant.  Any G could be used in a game.  This value is best for a scientific simulation.
-export const G: f64 = 6.674e-11
+import { SOLAR_MASS, DAYS_PER_YEAR, BOUNDS, SIM_SPEED, FLOATS_PER_BODY } from './nBodyConfig'
 
-// for sizing and indexing arrays
-export const bodySize: i32 = 4
-export const forceSize: i32 = 3
+let bodyIndex = 0
 
-/**
- * Given two bodies, calculate the Force of Gravity, then return as a 3-force vector (x, y, z)
- *
- * Sometimes, the force of gravity is:
- *
- * Fg  =  G * mA * mB / r^2
- *
- * Today, we're using better-gravity, because better-gravity can calculate force vectors without polar math (sin, cos, tan)
- *
- * Fbg =  G * mA * mB * dr / r^3     // using dr as a 3-value vector let's us project Fbg as a 3-force vector
- *
- * It may sound like bullshit, but it's not wrong:
- * - https://physics.stackexchange.com/questions/17285/split-gravitational-force-into-x-y-and-z-componenets
- * - https://stackoverflow.com/questions/57966211/calcuate-force-of-gravity-on-2-bodies-in-3d-space?noredirect=1#comment102344210_57966211
- *
- * Given:
- * - dx = bodyB.x - bodyA.x
- * - dr = (dx, dy, dz)     // a 3-value vector
- * - r  = sqrt ( dx + dy + dz) = straight line distance between objects
- * - G  = gravitational constant
- * - mA, mB = mass of objects
- *
- * Force of Better-Gravity:
- *
- * - Fbg = (Fx, Fy, Fz)  =  the change in force applied by gravity each body's (x,y,z) over a time period (1)
- * - Fbg = G * mA * mB * dr / r^3   // dr = (dx, dy, dz)
- * - Fx = Gmm * dx / r3
- * - Fy = Gmm * dy / r3
- * - Fz = Gmm * dz / r3
- *
- * From the parameters, return an array
- *
- * @param xA - BodyA x
- * @param yA - BodyA y
- * @param zA - BodyA z
- * @param mA - BodyA mass
- * @param xB - BodyB x
- * @param yB - BodyB y
- * @param zB - BodyB z
- * @param mB - BodyB mass
- * @return - [fx, fy, fz]
- */
-function twoBodyForces(xA: f64, yA: f64, zA: f64, mA: f64, xB: f64, yB: f64, zB: f64, mB: f64): f64[] {
-  // Values used in each x,y,z calculation
-  const Gmm: f64 = G * mA * mB
-  const dx: f64 = xB - xA
-  const dy: f64 = yB - yA
-  const dz: f64 = zB - zA
-  const r: f64 = Math.sqrt(dx * dx + dy * dy + dz * dz)
-  const r3: f64 = r * r * r
+const startMs = Date.now()
 
-  // Return calculated foce vector
-  const ret: f64[] = new Array<f64>(3)
+class Body {
+  id: number = bodyIndex++
+  constructor(
+    public x: float,
+    public y: float,
+    public z: float,
+    public vx: float,
+    public vy: float,
+    public vz: float,
+    public mass: float,
+  ) {}
 
-  // The best not-a-number number is zero thank you.  Two bodies in the same x,y,z
-  if (isNaN(r) || r === 0) return ret
-
-  // Calculate each part of the vector
-  ret[0] = (Gmm * dx) / r3
-  ret[1] = (Gmm * dy) / r3
-  ret[2] = (Gmm * dz) / r3
-
-  return ret
+  offsetMomentum(px: float, py: float, pz: float): this {
+    this.vx = -px / SOLAR_MASS
+    this.vy = -py / SOLAR_MASS
+    this.vz = -pz / SOLAR_MASS
+    return this
+  }
 }
 
-/**
- * Given N bodies with mass, in a 3d space, calculate the forces of gravity to be applied to each body.  
- * 
- * This function is exported to JavaScript, so only takes/returns numbers and arrays.
- * For N bodies, pass and array of 4N values (x,y,z,mass) and expect a 3N array of forces (x,y,z)
- * Those forcess can be applied to the bodies mass to update the its position in the simulation.
+function Sun(): Body {
+  return new Body(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, SOLAR_MASS)
+}
 
- * Calculate the 3-vector each unique pair of bodies applies to each other.
- * 
- *   0 1 2 3 4 5
- * 0   x x x x x
- * 1     x x x x
- * 2       x x x
- * 3         x x
- * 4           x
- * 5
- * 
- * Sum those forces together into an array of 3-vector x,y,z forces
- * 
- * Return 0 on success
- */
-export function nBodyForces(arrBodies: Float64Array): Float64Array {
-  // Check inputs
+function Jupiter(): Body {
+  return new Body(
+    4.8414314424647209,
+    -1.16032004402742839,
+    -1.03622044471123109e-1,
+    1.66007664274403694e-3 * DAYS_PER_YEAR,
+    7.69901118419740425e-3 * DAYS_PER_YEAR,
+    -6.90460016972063023e-5 * DAYS_PER_YEAR,
+    9.54791938424326609e-4 * SOLAR_MASS,
+  )
+}
 
-  const numBodies: i32 = arrBodies.length / bodySize
-  if (arrBodies.length % bodySize !== 0) trace('INVALID nBodyForces parameter.  Chaos ensues...')
+function Saturn(): Body {
+  return new Body(
+    8.34336671824457987,
+    4.12479856412430479,
+    -4.03523417114321381e-1,
+    -2.76742510726862411e-3 * DAYS_PER_YEAR,
+    4.99852801234917238e-3 * DAYS_PER_YEAR,
+    2.30417297573763929e-5 * DAYS_PER_YEAR,
+    2.85885980666130812e-4 * SOLAR_MASS,
+  )
+}
 
-  // Create result array.  This should be garbage collected later:  https://docs.assemblyscript.org/details/memory#dynamic-memory
+function Uranus(): Body {
+  return new Body(
+    1.2894369562139131e1,
+    -1.51111514016986312e1,
+    -2.23307578892655734e-1,
+    2.96460137564761618e-3 * DAYS_PER_YEAR,
+    2.3784717395948095e-3 * DAYS_PER_YEAR,
+    -2.96589568540237556e-5 * DAYS_PER_YEAR,
+    4.36624404335156298e-5 * SOLAR_MASS,
+  )
+}
 
-  let arrForces: Float64Array = new Float64Array(numBodies * forceSize)
+function Neptune(): Body {
+  return new Body(
+    1.53796971148509165e1,
+    -2.59193146099879641e1,
+    1.79258772950371181e-1,
+    2.68067772490389322e-3 * DAYS_PER_YEAR,
+    1.62824170038242295e-3 * DAYS_PER_YEAR,
+    -9.5159225451971587e-5 * DAYS_PER_YEAR,
+    5.15138902046611451e-5 * SOLAR_MASS,
+  )
+}
 
-  // For all bodies:
-
-  for (let i: i32 = 0; i < numBodies; i++) {
-    // Given body i: pair with every body[j] where j > i
-    for (let j: i32 = i + 1; j < numBodies; j++) {
-      // Calculate the force the bodies apply to one another
-      const bI: i32 = i * bodySize
-      const bJ: i32 = j * bodySize
-
-      const f: f64[] = twoBodyForces(
-        arrBodies[bI],
-        arrBodies[bI + 1],
-        arrBodies[bI + 2],
-        arrBodies[bI + 3], // x,y,z,m
-        arrBodies[bJ],
-        arrBodies[bJ + 1],
-        arrBodies[bJ + 2],
-        arrBodies[bJ + 3], // x,y,z,m
-      )
-
-      // Add this pair's force on one another to their total forces applied x,y,z
-
-      const fI: i32 = i * forceSize
-      const fJ: i32 = j * forceSize
-
-      // body0
-      arrForces[fI] = arrForces[fI] + f[0]
-      arrForces[fI + 1] = arrForces[fI + 1] + f[1]
-      arrForces[fI + 2] = arrForces[fI + 2] + f[2]
-
-      // body1
-      arrForces[fJ] = arrForces[fJ] - f[0] // apply forces in opposite direction
-      arrForces[fJ + 1] = arrForces[fJ + 1] - f[1]
-      arrForces[fJ + 2] = arrForces[fJ + 2] - f[2]
+class NBodySystem {
+  constructor(public bodies: Array<Body>) {
+    var px: float = 0.0
+    var py: float = 0.0
+    var pz: float = 0.0
+    for (let i = 0; i < bodies.length; ++i) {
+      let b = unchecked(bodies[i])
+      let m = b.mass
+      px += b.vx * m
+      py += b.vy * m
+      pz += b.vz * m
     }
+    //unchecked(bodies[0]).offsetMomentum(px, py, pz)
   }
-  // For each body, return the summ of forces all other bodies applied to it.
-  // If you'd like to debug wasm, you can use trace or the log functions described in nBodyWorker when we initialized
-  // E.g. trace("nBodyWasm returns (b0x, b0y, b0z, b1z): ", 4, arrForces[0], arrForces[1], arrForces[2], arrForces[3]) // x,y,z
-  return arrForces // success
+
+  advance(dt: float): void {
+    var bodies = this.bodies
+    var size: u32 = bodies.length
+    // var buffer = changetype<usize>(bodies.buffer_);
+
+    // Calculate and apply forces
+    for (let i: u32 = 0; i < size; ++i) {
+      let bodyi = unchecked(bodies[i])
+      // let bodyi = load<Body>(buffer + i * sizeof<Body>(), 8);
+
+      let ix = bodyi.x
+      let iy = bodyi.y
+      let iz = bodyi.z
+
+      let bivx = bodyi.vx
+      let bivy = bodyi.vy
+      let bivz = bodyi.vz
+
+      let bodyim = bodyi.mass
+      for (let j: u32 = i + 1; j < size; ++j) {
+        let bodyj = unchecked(bodies[j])
+        // let bodyj = load<Body>(buffer + j * sizeof<Body>(), 8);
+
+        let dx = ix - bodyj.x
+        let dy = iy - bodyj.y
+        let dz = iz - bodyj.z
+
+        let distanceSq = dx * dx + dy * dy + dz * dz
+        let distance = <float>Math.sqrt(distanceSq)
+        let mag = dt / (distanceSq * distance)
+
+        let bim = bodyim * mag
+        let bjm = bodyj.mass * mag
+
+        bivx -= dx * bjm
+        bivy -= dy * bjm
+        bivz -= dz * bjm
+
+        bodyj.vx += dx * bim
+        bodyj.vy += dy * bim
+        bodyj.vz += dz * bim
+      }
+
+      bodyi.vx = bivx
+      bodyi.vy = bivy
+      bodyi.vz = bivz
+
+      bodyi.x += dt * bivx
+      bodyi.y += dt * bivy
+      bodyi.z += dt * bivz
+    }
+    /*
+    // Remove any objects out of bounds
+    let i = bodies.length
+    while (i--) {
+      if (
+        bodies[i].x < -BOUNDS ||
+        bodies[i].x > BOUNDS ||
+        bodies[i].y < -BOUNDS ||
+        bodies[i].y > BOUNDS ||
+        bodies[i].z < -BOUNDS ||
+        bodies[i].z > BOUNDS
+      )
+        this.bodies.splice(i, 1)
+    }
+    */
+  }
+}
+
+var system: NBodySystem
+
+export function init(): void {
+  system = new NBodySystem([Sun(), Jupiter(), Saturn(), Uranus(), Neptune()])
+}
+
+export function add(x: float, y: float, z: float, vx: float, vy: float, vz: float, mass: float): number {
+  system.bodies.push(new Body(x, y, z, vx, vy, vz, mass))
+  return system.bodies.length
+}
+
+// Return a Float64 array with id,x,y,z of all objects
+export function step(): Float64Array {
+  const simulatedMs = Date.now() - startMs
+  const simulatedSteps = simulatedMs / 33 // tick every 33 ms
+  system.advance(<f64>simulatedSteps * SIM_SPEED)
+  const ret = new Float64Array(system.bodies.length * FLOATS_PER_BODY)
+  // Iterate the bodies and fill out the array
+  for (let i = 0; i < system.bodies.length; i++) {
+    const body = system.bodies[i]
+    const j = i * FLOATS_PER_BODY
+    ret[j] = body.id
+    ret[j + 1] = body.x
+    ret[j + 2] = body.y
+    ret[j + 3] = body.z
+    ret[j + 4] = body.mass
+  }
+  return ret
 }
