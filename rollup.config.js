@@ -3,14 +3,14 @@ import commonjs from '@rollup/plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
 import typescript from '@rollup/plugin-typescript'
 import copy from 'rollup-plugin-copy'
-import execute from 'rollup-plugin-execute'
+// import execute from 'rollup-plugin-execute'
 
 const production = !process.env.ROLLUP_WATCH
 
-const buildAsc = 'asc assembly/nBodyWasm.ts --target production --bindings raw --outFile output/nBodyWasm.wasm'
+//const buildAsc = 'asc assembly/NBodySystem.ts --target debug --bindings raw --outFile output/NBodySystem.wasm'
 const wasmAndStaticPlugins = [
-  execute(buildAsc, true),
-  copy({ targets: [{ src: 'static/*', dest: 'output', flatten: false }] }),
+  //execute(buildAsc, true),
+  copy({ targets: [{ src: 'static/*', dest: 'output', flatten: false }], copyOnce: true }),
 ]
 const typeScriptPlugins = [
   resolve(), // tells Rollup how to find date-fns in node_modules
@@ -21,13 +21,17 @@ const typeScriptPlugins = [
 
 export default [
   {
-    input: 'src/nBodyWorker.ts',
-    output: { file: 'output/nBodyWorker.js', sourcemap: true },
+    input: 'src/WebWorker.ts',
+    output: { file: 'output/WebWorker.js', sourcemap: true },
     plugins: wasmAndStaticPlugins.concat(typeScriptPlugins),
   },
   {
     input: 'src/index.ts',
-    output: { dir: 'output', sourcemap: true },
+    output: {
+      dir: 'output',
+      sourcemap: true,
+      // manualChunks: { babylon: ['@babylonjs/core', '@babylonjs/inspector'], },
+    },
     plugins: typeScriptPlugins,
   },
 ]

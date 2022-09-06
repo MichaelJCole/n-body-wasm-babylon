@@ -2,14 +2,13 @@
  * This is a toolkit of visualizers for our simulation.
  */
 
-import { Observable } from '@babylonjs/core/Misc/observable'
-import { Scene } from '@babylonjs/core/scene'
-import { createScene } from './nBodyScene'
+import { Observable, Scene } from '@babylonjs/core'
+import { createScene } from './createScene'
 
 /**
  * This is the WebVR visualizer.  It's responsible for painting and setting up the entire scene.
  */
-export class nBodyVisBabylon {
+export class VisualizerBabylon {
   sceneP: Promise<Scene>
   constructor(canvas: HTMLCanvasElement, public locationsObservable: Observable<Float64Array>) {
     // Pass ovservable to scene

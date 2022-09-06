@@ -1,5 +1,5 @@
-import { nBodyVisBabylon } from './nBodyVisualizer'
-import { nBodySimulator } from './nBodySimulator'
+import { VisualizerBabylon } from './Visualizer'
+import { Simulator } from './Simulator'
 
 window.onload = function () {
   // Find the canvas
@@ -7,10 +7,10 @@ window.onload = function () {
   if (!canvas) return console.error('could not find canvas element')
 
   // Create a Simulation, pass the
-  const sim = new nBodySimulator()
+  const sim = new Simulator()
 
   // Create the babylon visualization
-  const vis = new nBodyVisBabylon(canvas, sim.locationsObservable)
+  const vis = new VisualizerBabylon(canvas, sim.locationsObservable)
 
   // Start simulation
   sim.step()

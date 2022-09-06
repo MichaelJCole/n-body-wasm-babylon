@@ -1,13 +1,11 @@
-import { Observable } from '@babylonjs/core/Misc/observable'
-const WASM_URL = 'nBodyWasm.wasm'
-const WORKER_URL = 'nBodyWorker.js'
+import { Observable } from '@babylonjs/core'
+import { SIMULATION_MS_PER_STEP, WORKER_URL, WASM_URL } from './config'
+import { SolarSystem } from './SolarSystem'
 
 /**
- * Our n-body system simulator
+ * Our simulation in the main thread passes messages to/from WebWorker which calls NBodySystem
  */
-const SIMULATION_MS_PER_STEP = 40
-export class nBodySimulator {
-  // 1000 ms/s / 33 ms/frame = 30 frame/sec.  FIXME this could be replaced with requestAnimationFrame()
+export class Simulator {
   // Has the worker been setup?
   workerReady = false
   // Is the worker calculating
@@ -26,12 +24,12 @@ export class nBodySimulator {
     // Create a Web Worker (separate thread) that we'll pass the WebAssembly module to.
     this.worker = new Worker(WORKER_URL)
 
-    // Console errors from nBodyWorker.js
+    // Console errors from WebWorker.js
     this.worker.onerror = function (evt: { message: string }) {
       console.log(`Error from Web Worker: ${evt.message}`)
     }
 
-    // Listen for messages from nBodyWorker.js postMessage()
+    // Listen for messages from WebWorker.js postMessage()
     const self = this
     this.worker.onmessage = function (evt: MessageEvent) {
       if (evt && evt.data) {
@@ -41,7 +39,7 @@ export class nBodySimulator {
           // worker has loaded the wasm module we compiled and sent.  Let the magic begin!
           // See postmessage at the bottom of this function.
 
-          case 'wasmReady':
+          case 'init':
             self.workerReady = true
             break
 
@@ -56,11 +54,17 @@ export class nBodySimulator {
         }
       }
     }
+
+    const solarSystem = new SolarSystem()
     // Fetch and compile the wasm module because web workers cannot fetch()
     WebAssembly.compileStreaming(fetch(WASM_URL))
       // Send the compiled wasm module to the worker as a message
       .then((wasmModule) => {
-        self.worker.postMessage({ purpose: 'wasmModule', wasmModule })
+        self.worker.postMessage({
+          purpose: 'init',
+          wasmModule,
+          bodyFloats: solarSystem.justGiants(),
+        })
       })
   }
 
@@ -82,7 +86,7 @@ export class nBodySimulator {
     this.workerCalculating = true
 
     // postMessage() to worker to start calculation
-    // Execution continues in nBodyWorker.js worker.onmessage()
+    // Execution continues in WebWorker.js worker.onmessage()
     this.worker.postMessage({ purpose: 'step' })
     // setTimeout(step) happens in worker.onmessage({purpose:'step'})
   }
