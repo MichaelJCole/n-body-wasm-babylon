@@ -8,6 +8,8 @@ import { FLOATS_PER_BODY_OUT, SIZE_SCALE } from './config'
 
 import { Body } from './Body'
 
+const CAMERA_DIST = 25
+
 function createSkySphere(scene: Scene) {
   // Add 360 video - https://doc.babylonjs.com/divingDeeper/environment/360VideoDome
   // Add campfire sound here
@@ -49,7 +51,7 @@ export async function createScene(
     new Body(8, meshLib.getInstancedMesh('Neptune', 'Neptune-0')),
     new Body(9, meshLib.getInstancedMesh('Moon', 'Chiron-0')),
   ]
-  const camera = new FlyCamera('FlyCamera', new Vector3(50, -50, 50), scene)
+  const camera = new FlyCamera('FlyCamera', new Vector3(CAMERA_DIST, -CAMERA_DIST, CAMERA_DIST / 4), scene)
   camera.setTarget(Vector3.Zero())
   camera.attachControl()
   camera.parent = bodies[0].mesh

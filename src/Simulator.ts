@@ -63,7 +63,7 @@ export class Simulator {
         self.worker.postMessage({
           purpose: 'init',
           wasmModule,
-          bodyFloats: solarSystem.justGiants(),
+          bodyFloats: solarSystem.getBodyFloats(),
         })
       })
   }
