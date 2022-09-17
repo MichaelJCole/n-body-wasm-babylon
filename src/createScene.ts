@@ -1,17 +1,45 @@
-import { Engine, Vector3, Observable, FlyCamera, Scene, GlowLayer, PointLight } from '@babylonjs/core'
+import {
+  Engine,
+  Vector3,
+  Observable,
+  FlyCamera,
+  Scene,
+  GlowLayer,
+  PointLight,
+  VideoDome,
+  PointerEventTypes,
+  IWheelEvent,
+  TransformNode,
+} from '@babylonjs/core'
 
 import '@babylonjs/core/Debug/debugLayer'
 import '@babylonjs/inspector'
 
 import { MeshLib } from './MeshLib'
-import { FLOATS_PER_BODY_OUT, SIZE_SCALE } from './config'
+import { FLOATS_PER_BODY_OUT } from './config'
 
 import { Body } from './Body'
 
-const CAMERA_DIST = 25
+const DOME_VIDEO_URL = 'https://yoda.blob.core.windows.net/videos/uptale360.mp4'
+const DOME_POSTER_URL = '/campfire.png'
+const CAMERA_DIST = 100
+const SUNLIGHT_INTENSITY = 2700
 
 function createSkySphere(scene: Scene) {
   // Add 360 video - https://doc.babylonjs.com/divingDeeper/environment/360VideoDome
+
+  // Video dome
+  const dome = new VideoDome(
+    'videoDome',
+    DOME_VIDEO_URL,
+    {
+      autoPlay: true,
+      clickToPlay: true,
+      poster: DOME_POSTER_URL,
+      useDirectMapping: false, // enables zooming
+    },
+    scene,
+  )
   // Add campfire sound here
 }
 
@@ -34,7 +62,7 @@ export async function createScene(
   // Stop Loading screen
 
   const sunLight = new PointLight('SunLight', new Vector3(0, 1, 0), scene)
-  sunLight.intensity = 700
+  sunLight.intensity = SUNLIGHT_INTENSITY
   const glowLayer = new GlowLayer('glow', scene)
   // These are indexed in the scene and get different meshes
   // 0=Sun, Jupiter, Saturn, Uranus, Neptune
@@ -51,10 +79,18 @@ export async function createScene(
     new Body(8, meshLib.getInstancedMesh('Neptune', 'Neptune-0')),
     new Body(9, meshLib.getInstancedMesh('Moon', 'Chiron-0')),
   ]
-  const camera = new FlyCamera('FlyCamera', new Vector3(CAMERA_DIST, -CAMERA_DIST, CAMERA_DIST / 4), scene)
+  const orrery = new TransformNode('orrery', scene)
+  bodies.forEach((body) => {
+    body.mesh.parent = orrery
+    body.mesh.rotationQuaternion = null // turn off quaternions
+    body.mesh.rotation.x = Math.PI / 2
+  })
+  orrery.rotation.x = Math.PI / 2
+  orrery.position.y -= CAMERA_DIST / 4
+
+  const camera = new FlyCamera('FlyCamera', new Vector3(CAMERA_DIST, 0, 0), scene)
   camera.setTarget(Vector3.Zero())
   camera.attachControl()
-  camera.parent = bodies[0].mesh
 
   // This is the initial set of known objects.
   // We'll throw alot of smaller objects into the mix
@@ -78,8 +114,14 @@ export async function createScene(
     }
   })
 
+  let sunDrawSize = 0
   // Render every frame
   engine.runRenderLoop(() => {
+    if (!sunDrawSize) sunDrawSize = bodies[0].drawSize
+    const cameraDistance = bodies[0].mesh.position.subtract(camera.position).length()
+    let sunScaledDrawSize = sunDrawSize * (cameraDistance / 100)
+    bodies[0].drawSize = Math.min(Math.max(sunScaledDrawSize, 1), sunDrawSize)
+    console.log(bodies[0].drawSize)
     scene.render()
   })
 

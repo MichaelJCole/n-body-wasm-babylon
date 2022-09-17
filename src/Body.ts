@@ -11,10 +11,7 @@ export class Body {
     this.mesh.position.x = x * POSITION_SCALE
     this.mesh.position.y = y * POSITION_SCALE
     this.mesh.position.z = z * POSITION_SCALE
-    if (!this.drawSize) {
-      this.drawSize = Math.min(Math.max(Math.log10(mass * SIZE_SCALE), 1), 10) // 1-10 log ten
-      this.mesh.scaling.x = this.mesh.scaling.y = this.mesh.scaling.z = this.drawSize
-      console.log('drawsize', this.id, mass, this.drawSize, this.mesh.scaling.x)
-    }
+    if (!this.drawSize) this.drawSize = Math.min(Math.max(Math.log10(mass * SIZE_SCALE), 1), 10) // 1-10 log ten
+    this.mesh.scaling.x = this.mesh.scaling.y = this.mesh.scaling.z = this.drawSize
   }
 }

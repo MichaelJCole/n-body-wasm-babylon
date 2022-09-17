@@ -1,4 +1,4 @@
-import { Scene, AbstractMesh, ErrorCodes, InstancedMesh, Mesh, RuntimeError, SceneLoader } from '@babylonjs/core'
+import { Scene, AbstractMesh, ErrorCodes, Mesh, RuntimeError, SceneLoader } from '@babylonjs/core'
 import { GLTFFileLoader } from '@babylonjs/loaders'
 import { FILE_PATH } from './config'
 
@@ -39,14 +39,13 @@ export class MeshLib {
       return self
     })
   }
-  getInstancedMesh(meshName: string, instanceName: string | undefined = undefined): InstancedMesh {
+  getInstancedMesh(meshName: string, instanceName: string | undefined = undefined): Mesh {
     if (!instanceName) instanceName = meshName + '.' + Math.floor(Math.random() * 1000)
     const mesh = this.meshMap[meshName]
-    if (!mesh) {
-      console.log('getInstancedMesh', meshName, instanceName, this.meshMap)
-      throw new RuntimeError(`No mesh ${meshName} for ${instanceName}`, ErrorCodes.LoadFileError)
-    }
-    return mesh.createInstance(instanceName)
+    if (!mesh) throw new RuntimeError(`No mesh ${meshName} for ${instanceName}`, ErrorCodes.LoadFileError)
+    const ret = mesh.clone(instanceName)
+    ret.isVisible = true
+    return ret
   }
 }
 
