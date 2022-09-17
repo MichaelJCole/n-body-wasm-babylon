@@ -3,7 +3,6 @@ import commonjs from '@rollup/plugin-commonjs'
 import { terser } from 'rollup-plugin-terser'
 import typescript from '@rollup/plugin-typescript'
 import copy from 'rollup-plugin-copy'
-// import execute from 'rollup-plugin-execute'
 
 const production = !process.env.ROLLUP_WATCH
 
