@@ -117,7 +117,6 @@ export async function createScene(
     const cameraDistance = bodies[0].mesh.position.subtract(camera.position).length()
     let sunScaledDrawSize = sunDrawSize * (cameraDistance / 100)
     bodies[0].drawSize = Math.min(Math.max(sunScaledDrawSize, 1), sunDrawSize)
-    console.log(bodies[0].drawSize)
     scene.render()
   })
 
