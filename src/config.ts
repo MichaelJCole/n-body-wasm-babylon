@@ -1,7 +1,7 @@
 export * from '../assembly/config'
 
 export const SIMULATION_MS_PER_STEP = 30 // ms
-export const FILE_PATH = '/models/'
+export const FILE_PATH = 'models/'
 export const POSITION_SCALE = 8 // au / babylonUnit - see SolarSystem.ts
 export const SIZE_SCALE = 1e6 // kg / au - see SolarSystem.ts
 

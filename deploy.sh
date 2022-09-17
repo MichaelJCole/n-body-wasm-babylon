@@ -7,5 +7,5 @@ git add --all .
 git commit -am "new github pages content"
 git checkout githubpages
 git merge dev
-git push
+git push --all
 git checkout dev
