@@ -1,4 +1,4 @@
-import { AbstractMesh } from '@babylonjs/core'
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { POSITION_SCALE, SIZE_SCALE } from './config'
 
 /**

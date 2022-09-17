@@ -1,5 +1,10 @@
-import { Scene, AbstractMesh, ErrorCodes, Mesh, RuntimeError, SceneLoader } from '@babylonjs/core'
+import { ErrorCodes, RuntimeError } from '@babylonjs/core/Misc'
+import { SceneLoader } from '@babylonjs/core/Loading'
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh'
 import { GLTFFileLoader } from '@babylonjs/loaders'
+import { Mesh } from '@babylonjs/core/Meshes/mesh'
+import { Scene } from '@babylonjs/core/scene'
+
 import { FILE_PATH } from './config'
 
 const loader = new GLTFFileLoader()

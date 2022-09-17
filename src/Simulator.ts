@@ -1,4 +1,4 @@
-import { Observable } from '@babylonjs/core'
+import { Observable } from '@babylonjs/core/Misc/observable'
 import { SIMULATION_MS_PER_STEP, WORKER_URL, WASM_URL } from './config'
 import { SolarSystem } from './SolarSystem'
 

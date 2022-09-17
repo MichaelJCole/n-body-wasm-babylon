@@ -1,19 +1,15 @@
-import {
-  Engine,
-  Vector3,
-  Observable,
-  FlyCamera,
-  Scene,
-  GlowLayer,
-  PointLight,
-  VideoDome,
-  PointerEventTypes,
-  IWheelEvent,
-  TransformNode,
-} from '@babylonjs/core'
+import { Engine } from '@babylonjs/core/Engines/engine'
+import { FlyCamera } from '@babylonjs/core/Cameras/flyCamera'
+import { GlowLayer } from '@babylonjs/core/Layers'
+import { Observable } from '@babylonjs/core/Misc/observable'
+import { PointLight } from '@babylonjs/core/Lights/pointLight'
+import { Scene } from '@babylonjs/core/scene'
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode'
+import { Vector3 } from '@babylonjs/core/Maths/math.vector'
+import { VideoDome } from '@babylonjs/core/Helpers'
 
-import '@babylonjs/core/Debug/debugLayer'
-import '@babylonjs/inspector'
+//import '@babylonjs/core/Debug/debugLayer'
+//import '@babylonjs/inspector'
 
 import { MeshLib } from './MeshLib'
 import { FLOATS_PER_BODY_OUT } from './config'
@@ -126,9 +122,10 @@ export async function createScene(
   })
 
   // Show inspector.
-  scene.debugLayer.show({
-    embedMode: true,
-  })
-
+  /*
+    scene.debugLayer.show({
+      embedMode: true,
+    })
+  */
   return scene
 }

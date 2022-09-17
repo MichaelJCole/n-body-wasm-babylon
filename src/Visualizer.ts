@@ -2,7 +2,8 @@
  * This is a toolkit of visualizers for our simulation.
  */
 
-import { Observable, Scene } from '@babylonjs/core'
+import { Observable } from '@babylonjs/core/Misc/observable'
+import { Scene } from '@babylonjs/core/scene'
 import { createScene } from './createScene'
 
 /**
