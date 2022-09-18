@@ -120,11 +120,8 @@ export async function createScene(
     scene.render()
   })
 
-  // Show inspector.
-  /*
-    scene.debugLayer.show({
-      embedMode: true,
-    })
-  */
+  var defaultXRExperience = await scene.createDefaultXRExperienceAsync(/* optional configuration options */)
+  defaultXRExperience.teleportation.detach()
+
   return scene
 }
