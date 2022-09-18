@@ -22,16 +22,16 @@ export class MeshLib {
     const self = this
     this.initialized = Promise.all([
       /*load meshes*/
-      loadPlanetFile(scene, 'Sun.glb', 'Sun'),
-      loadPlanetFile(scene, 'Mercury.glb', 'Mercury'),
-      loadPlanetFile(scene, 'Venus.glb', 'Venus'),
-      loadPlanetFile(scene, 'Earth.glb', 'Earth'),
-      loadPlanetFile(scene, 'Mars.glb', 'Mars'),
-      loadPlanetFile(scene, 'Jupiter.glb', 'Jupiter'),
-      loadPlanetFile(scene, 'Saturn.glb', 'Saturn'),
-      loadPlanetFile(scene, 'Uranus.glb', 'Uranus'),
-      loadPlanetFile(scene, 'Neptune.glb', 'Neptune'),
-      loadPlanetFile(scene, 'Moon.glb', 'Moon'),
+      loadPlanetFile(scene, 'Sun.compressed.glb', 'Sun'),
+      loadPlanetFile(scene, 'Mercury.compressed.glb', 'Mercury'),
+      loadPlanetFile(scene, 'Venus.compressed.glb', 'Venus'),
+      loadPlanetFile(scene, 'Earth.compressed.glb', 'Earth'),
+      loadPlanetFile(scene, 'Mars.compressed.glb', 'Mars'),
+      loadPlanetFile(scene, 'Jupiter.compressed.glb', 'Jupiter'),
+      loadPlanetFile(scene, 'Saturn.compressed.glb', 'Saturn'),
+      loadPlanetFile(scene, 'Uranus.compressed.glb', 'Uranus'),
+      loadPlanetFile(scene, 'Neptune.compressed.glb', 'Neptune'),
+      loadPlanetFile(scene, 'Moon.compressed.glb', 'Moon'),
     ]).then((meshLoadingRecordss: MeshLoadingRecord[][]): MeshLib => {
       // Then create the meshMap we'll use to access them
       const allRecs = meshLoadingRecordss.reduce((total, meshLoadingRecords) => {

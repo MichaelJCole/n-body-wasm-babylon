@@ -17,7 +17,7 @@ import { FLOATS_PER_BODY_OUT } from './config'
 import { Body } from './Body'
 
 const DOME_VIDEO_URL = 'https://yoda.blob.core.windows.net/videos/uptale360.mp4'
-const DOME_POSTER_URL = '/campfire.png'
+const DOME_POSTER_URL = '/campfire.jpg'
 const CAMERA_DIST = 100
 const SUNLIGHT_INTENSITY = 2700
 
