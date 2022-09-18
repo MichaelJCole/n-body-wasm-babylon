@@ -11,6 +11,7 @@ import { VideoDome } from '@babylonjs/core/Helpers'
 //import '@babylonjs/core/Debug/debugLayer'
 //import '@babylonjs/inspector'
 
+import { CustomLoadingScreen } from './CustomLoadingScreen'
 import { MeshLib } from './MeshLib'
 import { FLOATS_PER_BODY_OUT } from './config'
 
@@ -46,6 +47,15 @@ export async function createScene(
   const engine = new Engine(canvas)
 
   // Start Loading screen
+  var loadingScreen = new CustomLoadingScreen("I'm loading!!")
+  // replace the default loading screen
+  engine.loadingScreen = loadingScreen
+  // show the loading screen
+  engine.displayLoadingUI()
+
+  /*
+   * create your scene over here
+   */
 
   // Create our first scene.
   var scene = new Scene(engine)
@@ -122,6 +132,9 @@ export async function createScene(
 
   var defaultXRExperience = await scene.createDefaultXRExperienceAsync(/* optional configuration options */)
   defaultXRExperience.teleportation.detach()
+
+  // hide the loading screen when you want to
+  engine.hideLoadingUI()
 
   return scene
 }
